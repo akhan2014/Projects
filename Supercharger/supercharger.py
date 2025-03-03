@@ -1,3 +1,6 @@
+import os
+print("Current working directory:", os.getcwd())
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
