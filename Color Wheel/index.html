@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rigged Spinning Color Wheel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        #container {
+            margin-top: 20px;
+        }
+        #wheel {
+            border: 5px solid #333;
+            border-radius: 50%;
+        }
+        #spinButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #spinButton:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #nameForm {
+            margin: 20px 0;
+        }
+        #namesList {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            display: none;
+        }
+        /* Celebration animation */
+        @keyframes celebrate {
+            0% { transform: scale(1); color: red; }
+            50% { transform: scale(1.2); color: blue; }
+            100% { transform: scale(1); color: green; }
+        }
+        .celebrate {
+            animation: celebrate 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <h1>Spinning Color Wheel</h1>
+    <div id="container">
+        <canvas id="wheel" width="300" height="300"></canvas>
+    </div>
+    <form id="nameForm">
+        <input type="text" id="nameInput" placeholder="Enter a name" required>
+        <button type="submit">Add Name</button>
+    </form>
+    <div id="namesList"></div>
+    <button id="spinButton" disabled>Spin the Wheel</button>
+    <div id="result"></div>
+
+    <script>
+        const canvas = document.getElementById('wheel');
+        const ctx = canvas.getContext('2d');
+        const spinButton = document.getElementById('spinButton');
+        const nameForm = document.getElementById('nameForm');
+        const nameInput = document.getElementById('nameInput');
+        const namesList = document.getElementById('namesList');
+        const result = document.getElementById('result');
+
+        let names = [];
+        let isSpinning = false;
+        let currentAngle = 0;
+
+        // *** Backend Rigging: Set the winner here ***
+        let riggedWinner = 'Deanna'; // Change this to a name in the list later, e.g., "Alice"
+
+        // Colors for wheel segments
+        const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEEAD', '#D4A5A5'];
+
+        // Draw the wheel
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = canvas.width / 2 - 10;
+            const segmentAngle = (2 * Math.PI) / names.length;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < names.length; i++) {
+                const startAngle = i * segmentAngle + currentAngle;
+                const endAngle = startAngle + segmentAngle;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.closePath();
+
+                // Add name
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + segmentAngle / 2);
+                ctx.fillStyle = '#000';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(names[i], radius - 10, 0);
+                ctx.restore();
+            }
+
+            // Draw pointer (triangle at top)
+            ctx.beginPath();
+            ctx.moveTo(centerX - 10, 10);
+            ctx.lineTo(centerX + 10, 10);
+            ctx.lineTo(centerX, 30);
+            ctx.fillStyle = '#333';
+            ctx.fill();
+        }
+
+        // Add name to list
+        nameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (name && !names.includes(name)) {
+                names.push(name);
+                namesList.textContent = 'Names: ' + names.join(', ');
+                nameInput.value = '';
+                drawWheel();
+                spinButton.disabled = names.length < 2; // Enable spin with 2+ names
+            }
+        });
+
+        // Spin the wheel
+        spinButton.addEventListener('click', () => {
+            if (isSpinning || names.length < 2) return;
+            isSpinning = true;
+            spinButton.disabled = true;
+            result.style.display = 'none';
+
+            // Calculate target angle for rigged winner
+            const winnerIndex = riggedWinner && names.includes(riggedWinner) 
+                ? names.indexOf(riggedWinner) 
+                : Math.floor(Math.random() * names.length); // Fallback to random
+            const segmentAngle = (2 * Math.PI) / names.length;
+            const targetAngle = (winnerIndex * segmentAngle + segmentAngle / 2) % (2 * Math.PI);
+            const fullSpins = 5 * 2 * Math.PI; // 5 full spins
+            const finalAngle = fullSpins + targetAngle;
+
+            let startTime = null;
+            const duration = 3000; // 3 seconds
+
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = (timestamp - startTime) / duration;
+                if (progress < 1) {
+                    currentAngle = finalAngle * progress;
+                    drawWheel();
+                    requestAnimationFrame(animate);
+                } else {
+                    currentAngle = finalAngle % (2 * Math.PI);
+                    drawWheel();
+                    isSpinning = false;
+                    spinButton.disabled = false;
+                    celebrateWinner(names[winnerIndex]);
+                }
+            }
+            requestAnimationFrame(animate);
+        });
+
+        // Celebration animation
+        function celebrateWinner(winner) {
+            result.textContent = `Winner: ${winner}!`;
+            result.style.display = 'block';
+            result.classList.add('celebrate');
+            setTimeout(() => {
+                result.classList.remove('celebrate');
+            }, 3000); // Stop after 3 seconds
+        }
+
+        // Initial draw
+        drawWheel();
+    </script>
+</body>
+</html>
