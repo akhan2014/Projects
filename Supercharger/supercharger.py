@@ -1,6 +1,5 @@
 import os
 print("Current working directory:", os.getcwd())
-#adding comment to test
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -33,9 +32,11 @@ print(avg_chargers_per_station)
 
 
 # 4. Visualize Bar Chart of Chargers per City
+plt.style.use('dark_background')
 plt.bar(data['City'], data['Chargers'], color= "red")
-plt.title('Tesla Superchargers: Chargers per City')
-plt.xlabel('City')
-plt.ylabel('Number of Chargers')
-plt.xticks(rotation=45) # rotate names for readablility
+plt.title('Tesla Superchargers: Chargers per City', color='white')
+plt.xlabel('City', color='white')
+plt.ylabel('Number of Chargers', color='white')
+plt.xticks(rotation=45, color='white') # rotate names for readablility
+plt.yticks(color='white')
 plt.show()
