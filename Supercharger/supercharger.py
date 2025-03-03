@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 #1. Load data
-data = pd.read_csv('tesla_supercharger.csv')
+data = pd.read_csv('Supercharger/tesla_supercharger.csv')
 
 #2. Clean the data
 
